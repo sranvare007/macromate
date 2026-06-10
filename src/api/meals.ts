@@ -36,11 +36,17 @@ export async function parseMeal(req: ParseMealRequest): Promise<ParseMealRespons
     body: JSON.stringify({ prompt: text }),
   });
 
-  if (!response.ok) {
+  let data: MacrosAnalyzeResponse;
+  try {
+    data = (await response.json()) as MacrosAnalyzeResponse;
+  } catch {
     throw new Error('Could not reach the server. Check your connection and try again.');
   }
 
-  const data = (await response.json()) as MacrosAnalyzeResponse;
+  if (!response.ok) {
+    throw new Error(data.error_message ?? 'Could not reach the server. Check your connection and try again.');
+  }
+
   return { raw_input: text, items: toParsedItems(data) };
 }
 

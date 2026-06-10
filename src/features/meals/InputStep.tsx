@@ -25,15 +25,30 @@ const SAMPLE_TRANSCRIPT = '2 grilled chicken thighs, a baked sweet potato, and s
 
 interface InputStepProps {
   mealType: MealType;
+  initialText?: string;
+  error?: string;
   onClose: () => void;
   onAnalyse: (text: string) => void;
+  onDismissError?: () => void;
 }
 
-export function InputStep({ mealType, onClose, onAnalyse }: InputStepProps) {
+export function InputStep({
+  mealType,
+  initialText,
+  error,
+  onClose,
+  onAnalyse,
+  onDismissError,
+}: InputStepProps) {
   const T = useTheme();
   const insets = useSafeAreaInsets();
-  const [text, setText] = React.useState('');
+  const [text, setText] = React.useState(initialText ?? '');
   const [recording, setRecording] = React.useState(false);
+
+  const handleTextChange = (value: string) => {
+    setText(value);
+    if (error) onDismissError?.();
+  };
 
   // simulate live transcription while recording
   React.useEffect(() => {
@@ -64,17 +79,22 @@ export function InputStep({ mealType, onClose, onAnalyse }: InputStepProps) {
         <View
           style={[
             styles.inputCard,
-            { backgroundColor: T.c.card, borderColor: recording ? T.accent.mid : T.c.hair },
+            {
+              backgroundColor: T.c.card,
+              borderColor: error ? T.status.over : recording ? T.accent.mid : T.c.hair,
+              borderWidth: error ? 1.5 : 1,
+            },
           ]}
         >
           <TextInput
             value={text}
-            onChangeText={setText}
+            onChangeText={handleTextChange}
             multiline
             autoFocus
             placeholder="e.g. 2 scrambled eggs, 2 slices whole wheat toast, 1 cup black coffee"
             placeholderTextColor={T.c.faint}
             accessibilityLabel="Meal description"
+            accessibilityHint={error}
             style={[styles.input, { color: T.c.text }]}
           />
           {recording && (
@@ -87,12 +107,22 @@ export function InputStep({ mealType, onClose, onAnalyse }: InputStepProps) {
           )}
         </View>
 
+        {error ? (
+          <View
+            accessibilityRole="alert"
+            accessibilityLiveRegion="polite"
+            style={[styles.errorBanner, { backgroundColor: `${T.status.over}18` }]}
+          >
+            <Text style={[styles.errorText, { color: T.status.over }]}>{error}</Text>
+          </View>
+        ) : null}
+
         <Text style={[styles.tryLabel, { color: T.c.faint }]}>TRY ONE OF THESE</Text>
         <View style={styles.chips}>
           {EXAMPLE_PROMPTS.map((p) => (
             <Pressable
               key={p}
-              onPress={() => setText(p)}
+              onPress={() => handleTextChange(p)}
               accessibilityRole="button"
               accessibilityLabel={`Use example: ${p}`}
               style={[styles.chip, { borderColor: T.c.hair, backgroundColor: T.c.cardHi }]}
@@ -134,7 +164,9 @@ const styles = StyleSheet.create({
   root: { flex: 1 },
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 18, paddingTop: 4 },
-  inputCard: { borderRadius: 24, borderWidth: 1, padding: 16, minHeight: 180 },
+  inputCard: { borderRadius: 24, padding: 16, minHeight: 180 },
+  errorBanner: { borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, marginTop: 12 },
+  errorText: { fontSize: 14, fontFamily: FONTS.bold, lineHeight: 21 },
   input: {
     minHeight: 120,
     fontSize: 18,

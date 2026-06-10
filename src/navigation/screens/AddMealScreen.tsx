@@ -4,26 +4,23 @@
 import type { StaticScreenProps } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import * as React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { parseMeal } from '../../api/meals';
 import type { ParsedItem } from '../../api/types';
-import { AccentButton } from '../../components/AccentButton';
-import { FlowHeader } from '../../components/FlowHeader';
 import { AnalyzingStep } from '../../features/meals/AnalyzingStep';
 import { InputStep } from '../../features/meals/InputStep';
 import { ReviewStep } from '../../features/meals/ReviewStep';
 import { nowLabel } from '../../lib/dates';
 import { mealAdded, useAppDispatch } from '../../store';
-import { FONTS, useTheme } from '../../theme';
+import { useTheme } from '../../theme';
 import type { MacroSet, MealItem, MealType } from '../../types';
 
 type Props = StaticScreenProps<{ mealType: MealType }>;
 
 type FlowState =
-  | { step: 'input' }
+  | { step: 'input'; text?: string; error?: string }
   | { step: 'analyzing'; text: string }
-  | { step: 'review'; text: string; items: ParsedItem[] }
-  | { step: 'error'; text: string; error: string };
+  | { step: 'review'; text: string; items: ParsedItem[] };
 
 export function AddMealScreen({ route }: Props) {
   const T = useTheme();
@@ -41,7 +38,11 @@ export function AddMealScreen({ route }: Props) {
         const res = await parseMeal({ meal_type: mealType, text });
         setFlow({ step: 'review', text, items: res.items });
       } catch (e) {
-        setFlow({ step: 'error', text, error: e instanceof Error ? e.message : 'Something went wrong.' });
+        setFlow({
+          step: 'input',
+          text,
+          error: e instanceof Error ? e.message : 'Something went wrong.',
+        });
       }
     },
     [mealType],
@@ -61,7 +62,16 @@ export function AddMealScreen({ route }: Props) {
 
   switch (flow.step) {
     case 'input':
-      return <InputStep mealType={mealType} onClose={close} onAnalyse={analyse} />;
+      return (
+        <InputStep
+          mealType={mealType}
+          initialText={flow.text}
+          error={flow.error}
+          onClose={close}
+          onAnalyse={analyse}
+          onDismissError={() => setFlow({ step: 'input', text: flow.text })}
+        />
+      );
     case 'analyzing':
       return (
         <View style={[styles.root, { backgroundColor: T.c.bg }]}>
@@ -70,23 +80,9 @@ export function AddMealScreen({ route }: Props) {
       );
     case 'review':
       return <ReviewStep mealType={mealType} parsedItems={flow.items} onClose={close} onSave={save} />;
-    case 'error':
-      return (
-        <View style={[styles.root, { backgroundColor: T.c.bg }]}>
-          <FlowHeader title="Couldn't analyse that" subtitle={mealType} onClose={close} />
-          <View style={styles.errorBody}>
-            <Text style={[styles.errorText, { color: T.c.sub }]}>{flow.error}</Text>
-            <AccentButton icon="sparkle" onPress={() => analyse(flow.text)}>
-              Try again
-            </AccentButton>
-          </View>
-        </View>
-      );
   }
 }
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
-  errorBody: { flex: 1, justifyContent: 'center', paddingHorizontal: 24, gap: 20 },
-  errorText: { fontSize: 15.5, fontFamily: FONTS.bold, textAlign: 'center', lineHeight: 23 },
 });
