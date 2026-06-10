@@ -18,11 +18,14 @@ Read the exact versioned docs at https://docs.expo.dev/versions/v55.0.0/ before 
 ## Commands
 
 ```bash
-npm start          # expo start --dev-client
-npm run ios        # expo run:ios
-npm run android    # expo run:android
-npx tsc --noEmit   # type-check (run before declaring any task done)
+cp .env.example .env   # first-time setup — set EXPO_PUBLIC_API_BASE_URL and EXPO_PUBLIC_API_KEY
+npm start              # expo start --dev-client
+npm run ios            # expo run:ios
+npm run android        # expo run:android
+npx tsc --noEmit       # type-check (run before declaring any task done)
 ```
+
+API credentials live in `.env` (gitignored). Only `EXPO_PUBLIC_*` vars are exposed to the client bundle.
 
 ## Project Structure
 

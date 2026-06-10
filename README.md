@@ -31,6 +31,14 @@ It includes the following:
   npm install
   ```
 
+- Configure environment variables:
+
+  ```sh
+  cp .env.example .env
+  ```
+
+  Set `EXPO_PUBLIC_API_BASE_URL` and `EXPO_PUBLIC_API_KEY` in `.env`. Expo loads these automatically; restart Metro after any change.
+
 - Start the development server:
 
   ```sh

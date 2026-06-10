@@ -1,5 +1,12 @@
-// Backend base URL and API key for NutriTrack v1 endpoints.
+// Backend credentials loaded from .env (EXPO_PUBLIC_* — inlined by Expo Metro).
 
-export const API_BASE_URL = 'https://macromate-backend-ceuyidt2iq-uc.a.run.app';
+function requireEnv(name: 'EXPO_PUBLIC_API_BASE_URL' | 'EXPO_PUBLIC_API_KEY'): string {
+  const value = process.env[name]?.trim();
+  if (!value) {
+    throw new Error(`Missing ${name}. Copy .env.example to .env and set your API credentials.`);
+  }
+  return value;
+}
 
-export const API_KEY = '5d9be37dcebaa566fa63477b25b9ed3ae66a37d04fea3e35faae7bebc8033c3a';
+export const API_BASE_URL = requireEnv('EXPO_PUBLIC_API_BASE_URL');
+export const API_KEY = requireEnv('EXPO_PUBLIC_API_KEY');
