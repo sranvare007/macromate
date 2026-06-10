@@ -1,8 +1,8 @@
 // Add-meal input (unified text + inline voice variant from the design).
-// Voice is simulated word-by-word until the speech-to-text pipeline exists.
 
 import * as React from 'react';
 import {
+  ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -14,74 +14,89 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { EXAMPLE_PROMPTS } from '../../api/meals';
+import type { ParsedItem } from '../../api/types';
 import { AccentButton } from '../../components/AccentButton';
 import { FlowHeader } from '../../components/FlowHeader';
 import { Icon } from '../../components/Icon';
 import { FONTS, useTheme } from '../../theme';
 import type { MealType } from '../../types';
+import { useMealVoiceInput } from './useMealVoiceInput';
 import { Waveform } from './Waveform';
-
-const SAMPLE_TRANSCRIPT = '2 grilled chicken thighs, a baked sweet potato, and some sautéed spinach';
 
 interface InputStepProps {
   mealType: MealType;
   initialText?: string;
+  pendingItems?: ParsedItem[];
   error?: string;
   onClose: () => void;
   onAnalyse: (text: string) => void;
+  onAnalyseAudio: (audioUri: string) => void;
+  onOpenReview: (text: string, items: ParsedItem[]) => void;
   onDismissError?: () => void;
 }
 
 export function InputStep({
   mealType,
   initialText,
+  pendingItems,
   error,
   onClose,
   onAnalyse,
+  onAnalyseAudio,
+  onOpenReview,
   onDismissError,
 }: InputStepProps) {
   const T = useTheme();
   const insets = useSafeAreaInsets();
   const [text, setText] = React.useState(initialText ?? '');
-  const [recording, setRecording] = React.useState(false);
+
+  React.useEffect(() => {
+    if (initialText !== undefined) setText(initialText);
+  }, [initialText]);
+
+  const {
+    recording,
+    requesting,
+    processingRecording,
+    voiceError,
+    volumeLevels,
+    toggleRecording,
+    dismissVoiceError,
+    openAppSettings,
+  } = useMealVoiceInput({
+    onDismissAnalyseError: onDismissError,
+    onRecordingComplete: onAnalyseAudio,
+  });
 
   const handleTextChange = (value: string) => {
     setText(value);
     if (error) onDismissError?.();
+    if (voiceError) dismissVoiceError();
   };
 
-  // simulate live transcription while recording
-  React.useEffect(() => {
-    if (!recording) return;
-    const words = SAMPLE_TRANSCRIPT.split(' ');
-    let i = 0;
-    setText('');
-    const id = setInterval(() => {
-      i++;
-      setText(words.slice(0, i).join(' '));
-      if (i >= words.length) {
-        clearInterval(id);
-        setTimeout(() => setRecording(false), 500);
-      }
-    }, 180);
-    return () => clearInterval(id);
-  }, [recording]);
-
+  const busy = recording || requesting || processingRecording;
+  const voiceAnalyzed = pendingItems != null && pendingItems.length > 0;
   const canGo = text.trim().length > 2;
+  const inputBorderColor = error ? T.status.over : recording ? T.accent.mid : T.c.hair;
+  const bannerError = error ?? voiceError?.message;
 
   return (
     <KeyboardAvoidingView
       style={[styles.root, { backgroundColor: T.c.bg }]}
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <FlowHeader title={`Add ${mealType}`} subtitle="Describe it — AI does the macros" onClose={onClose} />
+      <FlowHeader
+        title={`Add ${mealType}`}
+        subtitle={voiceAnalyzed ? 'Edit the transcript if needed' : 'Describe it — AI does the macros'}
+        onClose={onClose}
+      />
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} keyboardShouldPersistTaps="handled">
         <View
           style={[
             styles.inputCard,
             {
               backgroundColor: T.c.card,
-              borderColor: error ? T.status.over : recording ? T.accent.mid : T.c.hair,
+              borderColor: inputBorderColor,
               borderWidth: error ? 1.5 : 1,
             },
           ]}
@@ -90,47 +105,67 @@ export function InputStep({
             value={text}
             onChangeText={handleTextChange}
             multiline
-            autoFocus
+            autoFocus={!voiceAnalyzed}
+            editable={!busy}
             placeholder="e.g. 2 scrambled eggs, 2 slices whole wheat toast, 1 cup black coffee"
             placeholderTextColor={T.c.faint}
             accessibilityLabel="Meal description"
-            accessibilityHint={error}
+            accessibilityHint={bannerError}
             style={[styles.input, { color: T.c.text }]}
           />
-          {recording && (
+          {recording || processingRecording ? (
             <View style={[styles.listening, { backgroundColor: T.c.sunken }]}>
               <View style={styles.listeningWave}>
-                <Waveform active color={T.accent.hi} bars={18} />
+                <Waveform active={recording} levels={volumeLevels} color={T.accent.hi} />
               </View>
-              <Text style={[styles.listeningLabel, { color: T.accent.mid }]}>Listening…</Text>
+              <Text style={[styles.listeningLabel, { color: T.accent.mid }]}>
+                {processingRecording
+                  ? 'Saving your recording…'
+                  : "Tap the mic when you're done speaking"}
+              </Text>
             </View>
-          )}
+          ) : null}
         </View>
 
-        {error ? (
+        {bannerError ? (
           <View
             accessibilityRole="alert"
             accessibilityLiveRegion="polite"
             style={[styles.errorBanner, { backgroundColor: `${T.status.over}18` }]}
           >
-            <Text style={[styles.errorText, { color: T.status.over }]}>{error}</Text>
+            <Text style={[styles.errorText, { color: T.status.over }]}>{bannerError}</Text>
+            {voiceError?.openSettings ? (
+              <Pressable
+                onPress={openAppSettings}
+                accessibilityRole="button"
+                accessibilityLabel="Open Settings to enable microphone access"
+                style={styles.settingsLink}
+              >
+                <Text style={[styles.settingsLinkText, { color: T.status.over }]}>Open Settings</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
 
-        <Text style={[styles.tryLabel, { color: T.c.faint }]}>TRY ONE OF THESE</Text>
-        <View style={styles.chips}>
-          {EXAMPLE_PROMPTS.map((p) => (
-            <Pressable
-              key={p}
-              onPress={() => handleTextChange(p)}
-              accessibilityRole="button"
-              accessibilityLabel={`Use example: ${p}`}
-              style={[styles.chip, { borderColor: T.c.hair, backgroundColor: T.c.cardHi }]}
-            >
-              <Text style={[styles.chipText, { color: T.c.sub }]}>{p}</Text>
-            </Pressable>
-          ))}
-        </View>
+        {!voiceAnalyzed ? (
+          <>
+            <Text style={[styles.tryLabel, { color: T.c.faint }]}>TRY ONE OF THESE</Text>
+            <View style={styles.chips}>
+              {EXAMPLE_PROMPTS.map((p) => (
+                <Pressable
+                  key={p}
+                  onPress={() => handleTextChange(p)}
+                  disabled={busy}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Use example: ${p}`}
+                  style={[styles.chip, { borderColor: T.c.hair, backgroundColor: T.c.cardHi }]}
+                >
+                  <Text style={[styles.chipText, { color: T.c.sub }]}>{p}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </>
+        ) : null}
       </ScrollView>
 
       <View
@@ -140,20 +175,48 @@ export function InputStep({
         ]}
       >
         <Pressable
-          onPress={() => setRecording((r) => !r)}
+          onPress={() => void toggleRecording()}
+          disabled={requesting || processingRecording}
           accessibilityRole="button"
-          accessibilityLabel={recording ? 'Stop recording' : 'Record meal by voice'}
+          accessibilityLabel={
+            processingRecording
+              ? 'Saving voice recording'
+              : requesting
+                ? 'Requesting microphone permission'
+                : recording
+                  ? 'Stop recording'
+                  : 'Record meal by voice'
+          }
+          accessibilityHint={recording ? 'Stops voice recording and sends it for analysis' : undefined}
           style={[
             styles.micBtn,
-            { backgroundColor: recording ? T.status.over : T.c.card, borderColor: T.c.hair },
+            {
+              backgroundColor: recording ? T.status.over : T.c.card,
+              borderColor: recording ? T.status.over : T.c.hair,
+              opacity: requesting ? 0.7 : 1,
+            },
           ]}
         >
-          <Icon name="mic" size={24} color={recording ? '#fff' : T.accent.mid} stroke={2.2} />
+          {requesting ? (
+            <ActivityIndicator color={T.accent.mid} />
+          ) : (
+            <Icon name="mic" size={24} color={recording ? '#fff' : T.accent.mid} stroke={2.2} />
+          )}
         </Pressable>
         <View style={styles.cta}>
-          <AccentButton icon="sparkle" disabled={!canGo} onPress={() => onAnalyse(text)}>
-            Analyse meal
-          </AccentButton>
+          {voiceAnalyzed ? (
+            <AccentButton
+              icon="check"
+              disabled={busy}
+              onPress={() => onOpenReview(text.trim() || 'Voice recording', pendingItems)}
+            >
+              Review parsed items
+            </AccentButton>
+          ) : (
+            <AccentButton icon="sparkle" disabled={!canGo || busy} onPress={() => onAnalyse(text)}>
+              Analyse meal
+            </AccentButton>
+          )}
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -165,8 +228,10 @@ const styles = StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { paddingHorizontal: 18, paddingTop: 4 },
   inputCard: { borderRadius: 24, padding: 16, minHeight: 180 },
-  errorBanner: { borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, marginTop: 12 },
+  errorBanner: { borderRadius: 14, paddingVertical: 12, paddingHorizontal: 14, marginTop: 12, gap: 8 },
   errorText: { fontSize: 14, fontFamily: FONTS.bold, lineHeight: 21 },
+  settingsLink: { alignSelf: 'flex-start', minHeight: 44, justifyContent: 'center' },
+  settingsLinkText: { fontSize: 14, fontFamily: FONTS.extrabold, textDecorationLine: 'underline' },
   input: {
     minHeight: 120,
     fontSize: 18,
@@ -177,14 +242,21 @@ const styles = StyleSheet.create({
   listening: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 8,
     borderRadius: 14,
-    paddingVertical: 4,
+    paddingVertical: 8,
     paddingHorizontal: 12,
     marginTop: 8,
+    overflow: 'hidden',
   },
-  listeningWave: { flex: 1 },
-  listeningLabel: { fontSize: 12.5, fontFamily: FONTS.extrabold },
+  listeningWave: { flex: 1, minWidth: 0 },
+  listeningLabel: {
+    flex: 1,
+    minWidth: 0,
+    fontSize: 11.5,
+    fontFamily: FONTS.extrabold,
+    lineHeight: 16,
+  },
   tryLabel: { fontSize: 12.5, fontFamily: FONTS.extrabold, letterSpacing: 1, marginTop: 18, marginBottom: 10 },
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, paddingBottom: 16 },
   chip: { borderWidth: 1, borderRadius: 12, paddingVertical: 9, paddingHorizontal: 13 },

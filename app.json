@@ -17,7 +17,10 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.macromate"
+      "package": "com.macromate",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,6 +32,13 @@
         {
           "backgroundColor": "#ffffff",
           "image": "./assets/splash-icon.png"
+        }
+      ],
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "MacroMate needs microphone access so you can describe meals by voice.",
+          "speechRecognitionPermission": "MacroMate uses speech recognition to turn your meal description into text."
         }
       ]
     ]

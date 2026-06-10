@@ -50,12 +50,21 @@ export interface MacrosAnalyzeResponse {
   success: boolean;
   error: boolean;
   error_message: string | null;
+  /** Present on analyze-audio responses. */
+  transcript?: string | null;
 }
 
 // POST /api/meals/parse (client wrapper — calls /api/v1/macros/analyze)
 export interface ParseMealRequest {
   meal_type: MealType;
   text: string;
+}
+
+// POST /api/v1/macros/analyze-audio (multipart form: audio file)
+export interface ParseMealAudioRequest {
+  meal_type: MealType;
+  audioUri: string;
+  transcript?: string;
 }
 
 export interface ParsedItem {

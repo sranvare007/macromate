@@ -1,49 +1,64 @@
-// Live voice waveform (simulated levels), ported from addmeal.jsx.
+// Live voice waveform driven by speech-recognition volume metering.
 
 import * as React from 'react';
 import { StyleSheet, View } from 'react-native';
 
+const MIN_BAR_HEIGHT = 6;
+const MAX_BAR_HEIGHT = 28;
+
 interface WaveformProps {
   active: boolean;
   color: string;
-  bars?: number;
+  levels: number[];
 }
 
-export function Waveform({ active, color, bars = 24 }: WaveformProps) {
-  const [, force] = React.useReducer((x: number) => x + 1, 0);
-
-  React.useEffect(() => {
-    if (!active) return;
-    const id = setInterval(force, 110);
-    return () => clearInterval(id);
-  }, [active]);
+export function Waveform({ active, color, levels }: WaveformProps) {
+  const peak = levels.length > 0 ? Math.max(...levels) : 0;
+  const accessibilityLabel = active
+    ? peak > 0.05
+      ? 'Recording in progress, audio detected'
+      : 'Recording in progress, waiting for audio'
+    : 'Microphone idle';
 
   return (
-    <View style={styles.row} accessible accessibilityLabel={active ? 'Recording in progress' : 'Microphone idle'}>
-      {Array.from({ length: bars }, (_, i) => (
-        <View
-          key={i}
-          style={[
-            styles.bar,
-            {
-              height: active ? 10 + Math.random() * 28 : 6,
-              backgroundColor: color,
-              opacity: active ? 1 : 0.4,
-            },
-          ]}
-        />
-      ))}
+    <View style={styles.clip} accessible accessibilityLabel={accessibilityLabel}>
+      <View style={styles.row}>
+      {levels.map((level, i) => {
+        const height = active
+          ? MIN_BAR_HEIGHT + level * (MAX_BAR_HEIGHT - MIN_BAR_HEIGHT)
+          : MIN_BAR_HEIGHT;
+
+        return (
+          <View
+            key={i}
+            style={[
+              styles.bar,
+              {
+                height,
+                backgroundColor: color,
+                opacity: active ? 0.45 + level * 0.55 : 0.4,
+              },
+            ]}
+          />
+        );
+      })}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
+  clip: {
+    flex: 1,
+    minWidth: 0,
+    overflow: 'hidden',
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    gap: 3,
-    height: 42,
+    gap: 2,
+    height: 32,
+    width: '100%',
   },
-  bar: { width: 3.5, borderRadius: 99 },
+  bar: { flex: 1, maxWidth: 4, minWidth: 1.5, borderRadius: 99 },
 });

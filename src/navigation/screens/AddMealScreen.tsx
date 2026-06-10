@@ -5,7 +5,8 @@ import type { StaticScreenProps } from '@react-navigation/native';
 import { useNavigation } from '@react-navigation/native';
 import * as React from 'react';
 import { StyleSheet, View } from 'react-native';
-import { parseMeal } from '../../api/meals';
+import { parseMeal, parseMealAudio } from '../../api/meals';
+import { persistMealRecording } from '../../lib/mealRecordings';
 import type { ParsedItem } from '../../api/types';
 import { AnalyzingStep } from '../../features/meals/AnalyzingStep';
 import { InputStep } from '../../features/meals/InputStep';
@@ -18,7 +19,7 @@ import type { MacroSet, MealItem, MealType } from '../../types';
 type Props = StaticScreenProps<{ mealType: MealType }>;
 
 type FlowState =
-  | { step: 'input'; text?: string; error?: string }
+  | { step: 'input'; text?: string; error?: string; pendingItems?: ParsedItem[] }
   | { step: 'analyzing'; text: string }
   | { step: 'review'; text: string; items: ParsedItem[] };
 
@@ -48,6 +49,26 @@ export function AddMealScreen({ route }: Props) {
     [mealType],
   );
 
+  const analyseAudio = React.useCallback(
+    async (audioUri: string) => {
+      setFlow({ step: 'analyzing', text: 'Voice recording' });
+      try {
+        const savedUri = await persistMealRecording(audioUri);
+        const res = await parseMealAudio({
+          meal_type: mealType,
+          audioUri: savedUri,
+        });
+        setFlow({ step: 'input', text: res.raw_input, pendingItems: res.items });
+      } catch (e) {
+        setFlow({
+          step: 'input',
+          error: e instanceof Error ? e.message : 'Something went wrong.',
+        });
+      }
+    },
+    [mealType],
+  );
+
   const save = (items: MealItem[], totals: MacroSet) => {
     dispatch(mealAdded({
       id: `m${Date.now()}`,
@@ -66,9 +87,12 @@ export function AddMealScreen({ route }: Props) {
         <InputStep
           mealType={mealType}
           initialText={flow.text}
+          pendingItems={flow.pendingItems}
           error={flow.error}
           onClose={close}
           onAnalyse={analyse}
+          onAnalyseAudio={analyseAudio}
+          onOpenReview={(text, items) => setFlow({ step: 'review', text, items })}
           onDismissError={() => setFlow({ step: 'input', text: flow.text })}
         />
       );

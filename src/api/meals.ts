@@ -1,7 +1,20 @@
-// Meal-parsing endpoint wrapper — POST /api/v1/macros/analyze.
+// Meal-parsing endpoint wrappers — text and audio analyze routes.
 
+import { filenameForAudioUri, mimeTypeForAudioUri } from '../lib/audioMime';
 import { API_BASE_URL, API_KEY } from './config';
-import type { MacrosAnalyzeResponse, ParsedItem, ParseMealRequest, ParseMealResponse } from './types';
+import type {
+  MacrosAnalyzeResponse,
+  ParsedItem,
+  ParseMealAudioRequest,
+  ParseMealRequest,
+  ParseMealResponse,
+} from './types';
+
+type ReactNativeFormDataFile = {
+  uri: string;
+  name: string;
+  type: string;
+};
 
 function toParsedItems(res: MacrosAnalyzeResponse): ParsedItem[] {
   if (!res.success || res.error || !res.food_items?.length) {
@@ -21,6 +34,21 @@ function toParsedItems(res: MacrosAnalyzeResponse): ParsedItem[] {
   }));
 }
 
+async function readMacrosAnalyzeResponse(response: Response): Promise<MacrosAnalyzeResponse> {
+  let data: MacrosAnalyzeResponse;
+  try {
+    data = (await response.json()) as MacrosAnalyzeResponse;
+  } catch {
+    throw new Error('Could not reach the server. Check your connection and try again.');
+  }
+
+  if (!response.ok) {
+    throw new Error(data.error_message ?? 'Could not reach the server. Check your connection and try again.');
+  }
+
+  return data;
+}
+
 export async function parseMeal(req: ParseMealRequest): Promise<ParseMealResponse> {
   const text = req.text.trim();
   if (!text) {
@@ -36,18 +64,36 @@ export async function parseMeal(req: ParseMealRequest): Promise<ParseMealRespons
     body: JSON.stringify({ prompt: text }),
   });
 
-  let data: MacrosAnalyzeResponse;
-  try {
-    data = (await response.json()) as MacrosAnalyzeResponse;
-  } catch {
-    throw new Error('Could not reach the server. Check your connection and try again.');
-  }
-
-  if (!response.ok) {
-    throw new Error(data.error_message ?? 'Could not reach the server. Check your connection and try again.');
-  }
-
+  const data = await readMacrosAnalyzeResponse(response);
   return { raw_input: text, items: toParsedItems(data) };
+}
+
+export async function parseMealAudio(req: ParseMealAudioRequest): Promise<ParseMealResponse> {
+  const transcript = req.transcript?.trim() ?? '';
+  const filename = filenameForAudioUri(req.audioUri);
+  const formData = new FormData();
+  const file: ReactNativeFormDataFile = {
+    uri: req.audioUri,
+    name: filename,
+    type: mimeTypeForAudioUri(req.audioUri),
+  };
+
+  formData.append('audio', file as unknown as Blob);
+
+  const response = await fetch(`${API_BASE_URL}/api/v1/macros/analyze-audio`, {
+    method: 'POST',
+    headers: {
+      'x-api-key': API_KEY,
+    },
+    body: formData,
+  });
+
+  const data = await readMacrosAnalyzeResponse(response);
+  const raw_input = data.transcript?.trim() || transcript || 'Voice recording';
+  return {
+    raw_input,
+    items: toParsedItems(data),
+  };
 }
 
 export const EXAMPLE_PROMPTS = [
