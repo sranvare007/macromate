@@ -49,6 +49,14 @@
           "microphonePermission": "MacroMate needs microphone access so you can describe meals by voice.",
           "speechRecognitionPermission": "MacroMate uses speech recognition to turn your meal description into text."
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://de.sentry.io/",
+          "organization": "student-661",
+          "project": "macromate-frontend"
+        }
       ]
     ],
     "extra": {
