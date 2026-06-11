@@ -2,7 +2,7 @@
 
 import { API_GOAL_LABEL } from '../lib/goals';
 import type { MacroSet } from '../types';
-import { API_BASE_URL, API_KEY } from './config';
+import { apiBaseUrl, apiKey } from './config';
 import type { CalorieRecommendInputs, CalorieRecommendRequest, CalorieRecommendResponse } from './types';
 
 function toMacroSet(res: CalorieRecommendResponse): MacroSet {
@@ -26,11 +26,11 @@ export async function fetchCalorieRecommend(inputs: CalorieRecommendInputs): Pro
     goal: API_GOAL_LABEL[inputs.goalKey],
   };
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/calories/recommend`, {
+  const response = await fetch(`${apiBaseUrl()}/api/v1/calories/recommend`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
+      'x-api-key': apiKey(),
     },
     body: JSON.stringify(body),
   });

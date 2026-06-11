@@ -1,7 +1,7 @@
 // Meal-parsing endpoint wrappers — text and audio analyze routes.
 
 import { filenameForAudioUri, mimeTypeForAudioUri } from '../lib/audioMime';
-import { API_BASE_URL, API_KEY } from './config';
+import { apiBaseUrl, apiKey } from './config';
 import type {
   MacrosAnalyzeResponse,
   ParsedItem,
@@ -55,11 +55,11 @@ export async function parseMeal(req: ParseMealRequest): Promise<ParseMealRespons
     throw new Error('Tell us what you ate and we’ll work out the macros.');
   }
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/macros/analyze`, {
+  const response = await fetch(`${apiBaseUrl()}/api/v1/macros/analyze`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'x-api-key': API_KEY,
+      'x-api-key': apiKey(),
     },
     body: JSON.stringify({ prompt: text }),
   });
@@ -80,10 +80,10 @@ export async function parseMealAudio(req: ParseMealAudioRequest): Promise<ParseM
 
   formData.append('audio', file as unknown as Blob);
 
-  const response = await fetch(`${API_BASE_URL}/api/v1/macros/analyze-audio`, {
+  const response = await fetch(`${apiBaseUrl()}/api/v1/macros/analyze-audio`, {
     method: 'POST',
     headers: {
-      'x-api-key': API_KEY,
+      'x-api-key': apiKey(),
     },
     body: formData,
   });
