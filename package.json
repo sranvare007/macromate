@@ -6,7 +6,9 @@
     "start": "expo start --dev-client",
     "web": "expo start --web",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "expo run:ios",
+    "update:preview": "eas update --channel preview --environment preview",
+    "update:production": "eas update --channel production --environment production"
   },
   "dependencies": {
     "@expo-google-fonts/nunito": "^0.4.2",
@@ -26,6 +28,7 @@
     "expo-speech-recognition": "^56.0.1",
     "expo-splash-screen": "~55.0.11",
     "expo-system-ui": "~55.0.10",
+    "expo-updates": "~55.0.24",
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-native": "0.83.2",

@@ -10,17 +10,26 @@
     "scheme": "macromate",
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.macromate"
+      "bundleIdentifier": "com.macromate",
+      "infoPlist": {
+        "NSSpeechRecognitionUsageDescription": "MacroMate uses speech recognition to turn your meal description into text.",
+        "NSMicrophoneUsageDescription": "MacroMate needs microphone access so you can describe meals by voice."
+      },
+      "runtimeVersion": {
+        "policy": "appVersion"
+      }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "foregroundImage": "./assets/icon-foreground.png",
+        "backgroundImage": "./assets/icon-background.png",
+        "backgroundColor": "#0B1120"
       },
       "package": "com.macromate",
       "permissions": [
         "android.permission.RECORD_AUDIO"
-      ]
+      ],
+      "runtimeVersion": "1.0.0"
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -41,6 +50,15 @@
           "speechRecognitionPermission": "MacroMate uses speech recognition to turn your meal description into text."
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "675679a2-e3df-4f45-bd97-aaf53b585072"
+      }
+    },
+    "owner": "srnanvare007",
+    "updates": {
+      "url": "https://u.expo.dev/675679a2-e3df-4f45-bd97-aaf53b585072"
+    }
   }
 }
