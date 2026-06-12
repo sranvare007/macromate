@@ -57,7 +57,9 @@
           "organization": "student-661",
           "project": "macromate-frontend"
         }
-      ]
+      ],
+      "expo-sqlite",
+      "expo-sharing"
     ],
     "extra": {
       "eas": {

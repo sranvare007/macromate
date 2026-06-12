@@ -5,6 +5,7 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStaticNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { selectOnboarded, useAppSelector } from '../store';
 import { TabBar } from './TabBar';
 import { AddMealScreen } from './screens/AddMealScreen';
 import { DayDetailScreen } from './screens/DayDetailScreen';
@@ -26,34 +27,51 @@ const HomeTabs = createBottomTabNavigator({
   },
 });
 
+// Conditional-screen guards (React Navigation 7 static API): the onboarded
+// user gets the full app; a fresh install sees only the Welcome flow until it
+// completes, with no way to dismiss it.
+const useIsOnboarded = () => useAppSelector(selectOnboarded);
+const useIsNotOnboarded = () => !useAppSelector(selectOnboarded);
+
 const RootStack = createNativeStackNavigator({
   screenOptions: {
     headerShown: false,
   },
   screens: {
+    // First-launch onboarding gate — present until a profile is created.
+    Welcome: {
+      screen: OnboardingScreen,
+      if: useIsNotOnboarded,
+    },
     HomeTabs: {
       screen: HomeTabs,
+      if: useIsOnboarded,
     },
     AddMeal: {
       screen: AddMealScreen,
+      if: useIsOnboarded,
       options: {
         presentation: 'fullScreenModal',
       },
     },
     Goal: {
       screen: GoalScreen,
+      if: useIsOnboarded,
       options: {
         presentation: 'fullScreenModal',
       },
     },
     DayDetail: {
       screen: DayDetailScreen,
+      if: useIsOnboarded,
       options: {
         presentation: 'fullScreenModal',
       },
     },
+    // Replay onboarding from Settings (onboarded users only).
     Onboarding: {
       screen: OnboardingScreen,
+      if: useIsOnboarded,
       options: {
         presentation: 'fullScreenModal',
       },

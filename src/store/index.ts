@@ -21,6 +21,7 @@ export type AppDispatch = typeof store.dispatch;
 
 export { useAppDispatch, useAppSelector } from './hooks';
 export * from './selectors';
+export { appDataCleared } from './actions';
 export { mealAdded } from './slices/mealsSlice';
 export { onboardingFinished, profileUpdated } from './slices/profileSlice';
 export { toastDismissed, toastShown } from './slices/toastSlice';

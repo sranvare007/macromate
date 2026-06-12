@@ -1,22 +1,38 @@
-// User profile + onboarding status. v1 keeps everything in memory, seeded
-// with mock data; swap the seed/actions for API calls (src/api/) when the
-// backend lands.
+// User profile + onboarding status, backed by SQLite. Initial state is
+// hydrated from the database; writes are persisted by the listener middleware
+// (src/store/listeners.ts).
 
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { MOCK_PROFILE } from '../../api/mockData';
+import { loadProfile } from '../../db/profile';
 import type { UserProfile } from '../../types';
+import { appDataCleared } from '../actions';
 
 interface ProfileState {
   onboarded: boolean;
   profile: UserProfile;
 }
 
-// Seeded as already-onboarded so the demo opens on the dashboard;
-// Settings → "Replay onboarding" shows the first-launch flow.
-const initialState: ProfileState = {
-  onboarded: true,
-  profile: MOCK_PROFILE,
+// Blank-slate profile used before onboarding completes. The onboarding flow
+// collects weight, height and goal; the remaining fields keep the UI
+// renderable until then and are overwritten on finish.
+const DEFAULT_PROFILE: UserProfile = {
+  name: 'You',
+  email: '',
+  goalKey: 'lean_muscle',
+  weightKg: 70,
+  heightCm: 170,
+  age: 25,
+  sex: 'male',
+  streak: 0,
 };
+
+// Un-onboarded blank state: used on a fresh install and after a data wipe, so
+// the app routes to the onboarding flow (gated in src/navigation/index.tsx).
+const blankState = (): ProfileState => ({ onboarded: false, profile: DEFAULT_PROFILE });
+
+// Hydrate from the database, falling back to the blank state when nothing is
+// stored yet.
+const initialState: ProfileState = loadProfile() ?? blankState();
 
 const profileSlice = createSlice({
   name: 'profile',
@@ -34,6 +50,9 @@ const profileSlice = createSlice({
       }
       Object.assign(state.profile, action.payload);
     },
+  },
+  extraReducers: (builder) => {
+    builder.addCase(appDataCleared, () => blankState());
   },
 });
 

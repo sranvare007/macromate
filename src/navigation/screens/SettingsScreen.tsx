@@ -3,16 +3,17 @@
 
 import { useNavigation } from '@react-navigation/native';
 import * as React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { AccentAvatar } from '../../components/AccentAvatar';
 import { Icon } from '../../components/Icon';
 import { AppearanceRow } from '../../features/settings/AppearanceRow';
 import { EditValueSheet } from '../../features/settings/EditValueSheet';
 import { SectionLabel, SettingsRow, ToggleRow } from '../../features/settings/SettingsRow';
+import { shareDataExport } from '../../lib/exportData';
 import { GOAL_LABEL } from '../../lib/goals';
 import { formatFtIn, kgToLb } from '../../lib/units';
-import { profileUpdated, selectProfile, selectTargets, useAppDispatch, useAppSelector } from '../../store';
+import { appDataCleared, profileUpdated, selectProfile, selectTargets, useAppDispatch, useAppSelector } from '../../store';
 import { FONTS, useTheme } from '../../theme';
 
 export function SettingsScreen() {
@@ -24,8 +25,35 @@ export function SettingsScreen() {
   const targets = useAppSelector(selectTargets);
   const [editKind, setEditKind] = React.useState<'weight' | 'height' | null>(null);
   const [notif, setNotif] = React.useState(true);
+  const [exporting, setExporting] = React.useState(false);
 
   const card = { backgroundColor: T.c.card, borderColor: T.c.hair };
+
+  // GDPR data export: dump profile + meals to JSON and open the share sheet.
+  const handleExport = async () => {
+    if (exporting) return;
+    setExporting(true);
+    try {
+      await shareDataExport();
+    } catch (e) {
+      Alert.alert('Export failed', e instanceof Error ? e.message : 'Could not export your data.');
+    } finally {
+      setExporting(false);
+    }
+  };
+
+  // GDPR data wipe: erases the profile and every logged meal from SQLite and
+  // resets the store; onboarding re-appears via the navigation guard.
+  const confirmDeleteAll = () => {
+    Alert.alert(
+      'Delete all data?',
+      'This permanently erases your profile and every logged meal from this device. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { text: 'Delete everything', style: 'destructive', onPress: () => dispatch(appDataCleared()) },
+      ],
+    );
+  };
 
   return (
     <View style={[styles.root, { backgroundColor: T.c.bg }]}>
@@ -147,9 +175,14 @@ export function SettingsScreen() {
           <View style={[styles.card, card]}>
             <SettingsRow icon="user" title="Email" detail={profile.email} onPress={() => {}} />
             <SettingsRow icon="keyboard" title="Change password" onPress={() => {}} />
-            <SettingsRow icon="leaf" title="Export my data" onPress={() => {}} />
+            <SettingsRow
+              icon="leaf"
+              title="Export my data"
+              detail={exporting ? 'Preparing…' : undefined}
+              onPress={handleExport}
+            />
             <SettingsRow icon="arrowUp" title="Log out" onPress={() => {}} />
-            <SettingsRow icon="trash" title="Delete account" onPress={() => {}} danger last />
+            <SettingsRow icon="trash" title="Delete account" onPress={confirmDeleteAll} danger last />
           </View>
         </View>
 

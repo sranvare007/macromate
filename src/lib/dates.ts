@@ -18,3 +18,18 @@ export function greeting(d: Date = new Date()): string {
 export function isoDate(d: Date): string {
   return d.toISOString().slice(0, 10);
 }
+
+// Local-timezone day key (YYYY-MM-DD). Used to group meals into days for
+// persistence/history so entries land on the user's calendar day, not UTC's.
+export function dayKey(d: Date = new Date()): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// Inverse of dayKey: parse "YYYY-MM-DD" back to a local midnight Date.
+export function dateFromKey(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number);
+  return new Date(y, m - 1, d);
+}
