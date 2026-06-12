@@ -3,9 +3,8 @@
 // matching the design prototype (onboarding.jsx).
 
 import * as React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import Svg, { Path } from 'react-native-svg';
 import { AccentButton } from '../../components/AccentButton';
 import { Icon } from '../../components/Icon';
 import { Ring } from '../../components/Ring';
@@ -17,17 +16,13 @@ import type { MacroSet, UserProfile } from '../../types';
 import { CalculatingBody } from './CalculatingBody';
 import { GoalCardList } from '../goals/GoalCardList';
 
+// App icon (flame logo) so onboarding matches the launcher/store identity.
 function Logo({ size = 92 }: { size?: number }) {
   const T = useTheme();
   return (
     <View
       style={{
-        width: size,
-        height: size,
         borderRadius: size * 0.3,
-        backgroundColor: T.accent.mid,
-        alignItems: 'center',
-        justifyContent: 'center',
         shadowColor: T.accent.mid,
         shadowOpacity: 0.6,
         shadowRadius: 20,
@@ -35,16 +30,12 @@ function Logo({ size = 92 }: { size?: number }) {
         elevation: 10,
       }}
     >
-      <Svg width={size * 0.56} height={size * 0.56} viewBox="0 0 24 24">
-        <Path
-          d="M12 3c.6 3.4-2.4 4.6-2.4 8a3.4 3.4 0 0 0 6.8 0C16.4 9.4 12.6 7.5 12 3Z"
-          fill="none"
-          stroke={T.accent.on}
-          strokeWidth={2}
-          strokeLinejoin="round"
-        />
-        <Path d="M12 13.5v4" stroke={T.accent.on} strokeWidth={2} strokeLinecap="round" />
-      </Svg>
+      <Image
+        source={require('../../../assets/icon.png')}
+        accessibilityRole="image"
+        accessibilityLabel="MacroMate logo"
+        style={{ width: size, height: size, borderRadius: size * 0.3 }}
+      />
     </View>
   );
 }
@@ -181,7 +172,7 @@ export function OnboardingFlow({ initialProfile, onFinish, onClose }: Onboarding
         <View style={[styles.decorRing, styles.decorBottom, { borderColor: T.macros.protein }]} />
         <View style={styles.splashCenter}>
           <Logo />
-          <Text style={[styles.appName, { color: T.c.text }]}>NutriTrack</Text>
+          <Text style={[styles.appName, { color: T.c.text }]}>MacroMate</Text>
           <Text style={[styles.tagline, { color: T.c.sub }]}>
             Just say what you ate. AI logs your calories and macros — and keeps you on track.
           </Text>

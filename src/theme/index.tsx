@@ -1,4 +1,4 @@
-// Design tokens ported from the NutriTrack design files (theme.jsx).
+// Design tokens ported from the MacroMate design files (theme.jsx).
 // Default look: dark mode + lime accent.
 
 import AsyncStorage from '@react-native-async-storage/async-storage';

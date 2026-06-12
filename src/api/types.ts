@@ -1,4 +1,4 @@
-// Request/response types for the NutriTrack backend (docs/PRD.md §Backend API).
+// Request/response types for the MacroMate backend (docs/PRD.md §Backend API).
 
 import type { GoalKey, MealType } from '../types';
 

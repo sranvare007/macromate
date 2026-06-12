@@ -31,7 +31,7 @@ const toastSlice = createSlice({
         state.message = `${action.payload.type} added · +${action.payload.kcal} kcal`;
       })
       .addCase(onboardingFinished, (state) => {
-        state.message = 'Welcome to NutriTrack!';
+        state.message = 'Welcome to MacroMate!';
       })
       .addCase(profileUpdated, (state) => {
         state.message = 'Targets recalculated';

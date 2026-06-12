@@ -20,7 +20,7 @@ export async function shareDataExport(): Promise<void> {
 
   await Sharing.shareAsync(file.uri, {
     mimeType: 'application/json',
-    dialogTitle: 'Export NutriTrack data',
+    dialogTitle: 'Export MacroMate data',
     UTI: 'public.json',
   });
 }

@@ -195,7 +195,7 @@ export function SettingsScreen() {
           <Icon name="sparkle" size={17} color={T.c.sub} />
           <Text style={[styles.replayText, { color: T.c.sub }]}>Replay onboarding</Text>
         </Pressable>
-        <Text style={[styles.version, { color: T.c.faint }]}>NutriTrack · v1.0.0</Text>
+        <Text style={[styles.version, { color: T.c.faint }]}>MacroMate · v1.0.0</Text>
       </ScrollView>
 
       <EditValueSheet
